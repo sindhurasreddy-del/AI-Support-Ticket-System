@@ -1,0 +1,1088 @@
+{
+  "name": "Support Ticket Processing",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "support-ticket",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "9efdbb5d-8073-4781-a23b-8dffdc8451dc",
+      "name": "Webhook",
+      "webhookId": "e08e3a35-d0b5-412a-967e-22965a872b0b"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e60c05ce-24f9-41ed-af8b-edfed0dc5581",
+              "leftValue": "={{ $json.body.name }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "40cdf59e-5fe1-468b-8c34-54e670654916",
+              "leftValue": "={{ $json.body.email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "415105cb-fdb9-49aa-9afb-6537757bde42",
+              "leftValue": "={{ $json.body.subject }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "2f85e1ba-4cbb-4efe-bce9-7f0be315e480",
+              "leftValue": "={{ $json.body.message }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "52789c64-ca94-425e-8ae4-e01d61bc1a38",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"error\": \"Missing required fields. Please provide name, email, subject, and message.\", \"status\": \"validation_failed\"}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        416,
+        96
+      ],
+      "id": "d3ed084e-9df2-4935-8b9f-5fd9cac0b578",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "de1e63ec-f7e9-4eaf-af80-1629e0960946",
+              "name": "=ticketId",
+              "value": "={{ \"TKT-\" + Date.now() }}",
+              "type": "string"
+            },
+            {
+              "id": "cb5a04f6-2a2e-42e1-a9d0-8a0125c419a7",
+              "name": "=timestamp",
+              "value": "={{ new Date().toISOString() }}",
+              "type": "string"
+            },
+            {
+              "id": "b382e457-7d6b-478b-91c7-0d268c6039a9",
+              "name": "=name",
+              "value": "={{ $json.body.name }}",
+              "type": "string"
+            },
+            {
+              "id": "90625ea0-f072-4566-a68e-9583f8394d5c",
+              "name": "=email",
+              "value": "={{ $json.body.email }}",
+              "type": "string"
+            },
+            {
+              "id": "376c3d65-cc25-4b27-8dfc-30df4c6e2621",
+              "name": "=subject",
+              "value": "={{ $json.body.subject }}",
+              "type": "string"
+            },
+            {
+              "id": "75c168f0-2ded-4051-9a9d-9959145534a9",
+              "name": "=message",
+              "value": "={{ $json.body.message }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        416,
+        -96
+      ],
+      "id": "a9dfb349-85a1-4998-bd6c-0b7b0bdfef22",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are a support ticket classifier for NOAVIA, a German AI solutions company. Analyze the ticket and return ONLY a valid JSON object with no other text: {\"category\": \"one of: billing, technical, account, product, contract, privacy, general\", \"urgency\": \"one of: critical, high, medium, low\", \"sentiment\": \"one of: angry, frustrated, neutral, satisfied\", \"confidence\": 0.0 to 1.0, \"summary\": \"brief 1-sentence summary in English\"}"
+            },
+            {
+              "content": "=Subject: {{ $json.subject }}\nMessage: {{ $json.message }}\nCustomer: {{ $json.name }} ({{ $json.email }})"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        624,
+        -96
+      ],
+      "id": "ab347b9e-645a-4a05-b735-0783f9773013",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "REDACTED",
+          "name": "OpenAI account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e5cb5fb4-706e-4c37-830f-d78ba98f50de",
+              "name": "=category",
+              "value": "={{ JSON.parse($json.output[0].content[0].text.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim()).category }}",
+              "type": "string"
+            },
+            {
+              "id": "6e6be2f9-6739-4e54-9556-9f75756f9cc3",
+              "name": "=urgency",
+              "value": "={{ JSON.parse($json.output[0].content[0].text.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim()).urgency }}",
+              "type": "string"
+            },
+            {
+              "id": "2675f3fe-9f0e-4e56-9935-3071bb6ba747",
+              "name": "=sentiment",
+              "value": "={{ JSON.parse($json.output[0].content[0].text.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim()).sentiment }}",
+              "type": "string"
+            },
+            {
+              "id": "b05b003c-0123-4eee-89a6-2f573cdebd55",
+              "name": "=confidence",
+              "value": "={{ JSON.parse($json.output[0].content[0].text.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim()).confidence }}",
+              "type": "string"
+            },
+            {
+              "id": "49769a9e-1a6e-47ae-bccc-1f0a49878c99",
+              "name": "=summary",
+              "value": "={{ JSON.parse($json.output[0].content[0].text.replace(/```json\\n?/g, '').replace(/```\\n?/g, '').trim()).summary }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        896,
+        -96
+      ],
+      "id": "4929c878-2ef9-4cb2-b9bd-7cc479e6ebcc",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Ticket ID: {{ $json.ticketId }}\nCustomer: {{ $json.name }} ({{ $json.email }})\nSubject: {{ $json.subject }}\nMessage: {{ $json.message }}\nCategory: {{ $json.category }}\nUrgency: {{ $json.urgency }}\nSentiment: {{ $json.sentiment }}\n\nPlease draft a professional response to this customer.",
+        "options": {
+          "systemMessage": "=You are a professional support agent for NOAVIA, a German AI solutions company. You MUST ALWAYS use the Qdrant knowledge base tool to search for relevant information BEFORE drafting any response. This is mandatory - never skip the knowledge base search. After retrieving knowledge base results, draft a professional response to the customer's support ticket. Match the tone to the customer's sentiment. Reference specific knowledge base articles where applicable. If no relevant knowledge was found, note: No specific policy found. Write the response in the same language as the customer's message. Be helpful, empathetic, and professional. Address the customer by name."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1104,
+        -96
+      ],
+      "id": "b3215b89-2d4a-48bb-8f5e-a3b38b5c9a5b",
+      "name": "AI Agent",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Search the NOAVIA knowledge base to find answers to customer questions about billing, contracts, cancellation, pricing, products, technical issues, GDPR, and company policies. Always use this tool before responding to a customer.",
+        "qdrantCollection": {
+          "__rl": true,
+          "value": "noavia_knowledge_base",
+          "mode": "id"
+        },
+        "topK": 3,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreQdrant",
+      "typeVersion": 1.3,
+      "position": [
+        1344,
+        64
+      ],
+      "id": "0ae9c8a0-2e1d-4018-9269-a81f061304d2",
+      "name": "Qdrant Vector Store1",
+      "credentials": {
+        "qdrantApi": {
+          "id": "REDACTED",
+          "name": "Qdrant account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5cc934c7-2e09-4160-9463-4665a06d39d6",
+              "name": "draftResponse",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            },
+            {
+              "id": "cb070616-500e-4639-80f7-91f243faa931",
+              "name": "=ticketId",
+              "value": "={{ $('Edit Fields').item.json.ticketId }}",
+              "type": "string"
+            },
+            {
+              "id": "e27f0a5d-8fb6-4f4c-bc87-e63ece680d4b",
+              "name": "=timestamp",
+              "value": "={{ $('Edit Fields').item.json.timestamp }}",
+              "type": "string"
+            },
+            {
+              "id": "b1397d55-23ea-4392-a855-fe9de72db56d",
+              "name": "=name",
+              "value": "={{ $('Edit Fields').item.json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "4b573307-22ea-4108-9fe1-374a75c0903f",
+              "name": "=email",
+              "value": "={{ $('Edit Fields').item.json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "7995ccdd-0c8d-4f69-8a39-47f3cdf4aa58",
+              "name": "=subject",
+              "value": "={{ $('Edit Fields').item.json.subject }}",
+              "type": "string"
+            },
+            {
+              "id": "7ae30fbd-dff6-4b4b-b76c-5e8348f7a968",
+              "name": "=message",
+              "value": "={{ $('Edit Fields').item.json.message }}",
+              "type": "string"
+            },
+            {
+              "id": "c349a84d-294f-42a8-881a-c065a7fa0a2b",
+              "name": "=category",
+              "value": "={{ $('Edit Fields1').item.json.category }}",
+              "type": "string"
+            },
+            {
+              "id": "be1cbf7f-4f1b-4d02-9eb7-d8af7ab2450d",
+              "name": "=urgency",
+              "value": "={{ $('Edit Fields1').item.json.urgency }}",
+              "type": "string"
+            },
+            {
+              "id": "798330d3-16d5-419e-8681-3ba6d0acb409",
+              "name": "=sentiment",
+              "value": "={{ $('Edit Fields1').item.json.sentiment }}",
+              "type": "string"
+            },
+            {
+              "id": "d77251c5-1832-4321-838d-5b41d754b091",
+              "name": "=confidence",
+              "value": "={{ $('Edit Fields1').item.json.confidence }}",
+              "type": "string"
+            },
+            {
+              "id": "18fdc6a0-760d-49bd-a58e-b40385f74a77",
+              "name": "=summary",
+              "value": "={{ $('Edit Fields1').item.json.summary }}",
+              "type": "string"
+            },
+            {
+              "id": "6f281934-a337-4da5-bfbb-80f26ca964ed",
+              "name": "=status",
+              "value": "={{ $('Edit Fields1').item.json.confidence < 0.6 ? \"needs-manual-review\" : \"processed\" }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1456,
+        -96
+      ],
+      "id": "68e862ac-389f-4baa-b6a1-396c10670859",
+      "name": "Edit Fields2"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.urgency }}",
+                    "rightValue": "critical",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "04c03d49-f42d-44e5-99f9-c8e2783e34b5"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "critical"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "e1b726c6-fb53-46ad-89b0-0f9483edeaa7",
+                    "leftValue": "={{ $json.urgency }}",
+                    "rightValue": "high",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "high"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "98d9482d-f37d-4575-bb36-fe8e1a742a07",
+                    "leftValue": "={{ $json.urgency }}",
+                    "rightValue": "medium",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "medium"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "9a8949ee-e07f-4243-a70d-47e750c706f2",
+                    "leftValue": "={{ $json.urgency }}",
+                    "rightValue": "low",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "low"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1616,
+        -96
+      ],
+      "id": "0bb11990-5221-490b-ad09-278700f6aa1b",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1g0iArWW2mFY98lAAL-cSIuRE6E0gJ45sioTpeWoSLiw/edit?pli=1&gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1g0iArWW2mFY98lAAL-cSIuRE6E0gJ45sioTpeWoSLiw/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ticketId",
+              "displayName": "ticketId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "timestamp",
+              "displayName": "timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "subject",
+              "displayName": "subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "urgency",
+              "displayName": "urgency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sentiment",
+              "displayName": "sentiment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "confidence",
+              "displayName": "confidence",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "draftResponse",
+              "displayName": "draftResponse",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "output",
+              "displayName": "output",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1904,
+        -160
+      ],
+      "id": "1fc8c67f-189d-4b30-b068-f370bb1f5f7a",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "REDACTED",
+          "name": "Google account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\"status\": \"success\", \"ticketId\": \"{{ $json.ticketId }}\", \"urgency\": \"{{ $json.urgency }}\", \"category\": \"{{ $json.category }}\", \"message\": \"Your support ticket has been received and is being processed.\"}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2080,
+        -176
+      ],
+      "id": "daca3316-8927-4949-910f-f08f1063371f",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "sendTo": "namrathbasavaraju@gmail.com",
+        "subject": "=CRITICAL Ticket: {{ $json.subject }} - {{ $json.ticketId }}",
+        "message": "=<h2>Critical Support Ticket</h2>\n<p><b>Ticket ID:</b> {{ $json.ticketId }}</p>\n<p><b>Customer:</b> {{ $json.name }} ({{ $json.email }})</p>\n<p><b>Subject:</b> {{ $json.subject }}</p>\n<p><b>Category:</b> {{ $json.category }}</p>\n<p><b>Urgency:</b> {{ $json.urgency }}</p>\n<p><b>Sentiment:</b> {{ $json.sentiment }}</p>\n<p><b>Confidence:</b> {{ $json.confidence }}</p>\n<p><b>Summary:</b> {{ $json.summary }}</p>\n<hr>\n<h3>Customer Message:</h3>\n<p>{{ $json.message }}</p>\n<hr>\n<h3>AI Draft Response:</h3>\n<p>{{ $json.draftResponse }}</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1808,
+        -368
+      ],
+      "id": "0e2aaa5c-eba4-4a0e-9e17-1d3a629425cd",
+      "name": "Send a message",
+      "webhookId": "9fc1e4c5-df9a-4e88-a874-1626f908d225",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REDACTED",
+          "name": "Gmail account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "sendTo": "sindhurasriramareddy@gmail.com",
+        "subject": "={{ $json.subject }} - {{ $json.ticketId }}",
+        "message": "=<p><b>Ticket ID:</b> {{ $json.ticketId }}</p>\n<p><b>Customer:</b> {{ $json.name }}</p>\n<p><b>Subject:</b> {{ $json.subject }}</p>\n<p><b>Category:</b> {{ $json.category }}</p>\n<p><b>Summary:</b> {{ $json.summary }}</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1776,
+        96
+      ],
+      "id": "6d2f0c6e-0114-4ecd-8656-4abfa552539c",
+      "name": "Send a message1",
+      "webhookId": "0bcc8bea-6a90-4cc4-b625-7809d2a95c54",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REDACTED",
+          "name": "Gmail account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "8009d2ed-3094-402f-a01f-a3d31ff1c32f",
+              "leftValue": "={{ $json.body?.file ? true : false }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        -432
+      ],
+      "id": "eaa11502-b436-415b-ab2d-c8fc07f3cc08",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "=data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        -464
+      ],
+      "id": "322d41be-6c8b-4b2a-88c2-3f873affa17f",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "525744ee-709c-49d3-9cb5-1ca38153e514",
+              "name": "message",
+              "value": "={{ $('Edit Fields').item.json.message + \"\\n\\n--- PDF Attachment Content ---\\n\" + $json.text }",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        928,
+        -464
+      ],
+      "id": "1873c12b-2e50-422d-9aba-0a3dddee8e3e",
+      "name": "Edit Fields3"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        976,
+        112
+      ],
+      "id": "6996802b-0103-4704-a49d-af36d3495356",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "REDACTED",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1344,
+        240
+      ],
+      "id": "c3daedbc-015c-471b-9680-bbdf30887c87",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "REDACTED",
+          "name": "OpenAI account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qdrant Vector Store1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields2": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message1": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields3": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Qdrant Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "53765ac0-b76c-43f5-bfcd-13527651c099",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "REDACTED"
+  },
+  "id": "aVYBOpWst2WrKj81",
+  "tags": []
+}
