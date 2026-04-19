@@ -1,0 +1,36 @@
+# Environment & secrets
+.env
+*.env.local
+*.env.production
+
+# n8n local data
+n8n_data/
+.n8n/
+
+# Qdrant local storage
+qdrant_data/
+
+# Docker volumes
+volumes/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Python
+__pycache__/
+*.pyc
+venv/
+
+# Logs
+*.log
+
+# Temp files
+*.tmp
+*.bak
